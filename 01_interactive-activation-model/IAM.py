@@ -97,7 +97,7 @@ feature_coordinates = {
 
 # Function that draws one letter:
 
-def draw_letter(feature_list, feature_coordinates, axes):
+def draw_letter(feature_list, feature_coordinates, axes, color='k'):
     axes.grid()
     axes.set(xlim=(-1.2, 1.2), ylim=(-1.2, 1.2))
     
@@ -108,7 +108,7 @@ def draw_letter(feature_list, feature_coordinates, axes):
         line_coords = feature_coordinates[line_nmbr]
         x_values = [line_coords[0][0], line_coords[1][0]]
         y_values = [line_coords[0][1], line_coords[1][1]]
-        plt.plot(x_values, y_values, color = 'k', linewidth = 4)
+        axes.plot(x_values, y_values, color = color, linewidth = 4)
 
 
 plt.plot()
@@ -174,11 +174,23 @@ def f():
     feature_nodes = feature_nodes - decay
 
 
+def draw_features():
+    fig, axs = plt.subplots(ncols=4, nrows=1)
+    for pos_features, axes in zip(feature_nodes, axs):
+        a = max(pos_features)  # activation level
+        color = (1 - a, 1 - a, 1 - a)
+        draw_letter(feature_list=np.nonzero(pos_features)[0], 
+                    feature_coordinates=feature_coordinates, 
+                    axes=axes,
+                    color=color)
+
+
 np.set_printoptions(precision=2, floatmode='fixed')
 present_word('WORK')
 print(feature_nodes)
 for t in range(10):
     print(f'\nafter {t + 1} cycles:')
     f()
-    print(feature_nodes)
+    draw_features()
+    plt.show()
 

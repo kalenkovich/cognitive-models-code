@@ -194,3 +194,50 @@ for t in range(10):
     draw_features()
     plt.show()
 
+
+# # Letter layer
+
+letter_count = len(list(feature_numbers.keys()))
+position_count = 4
+r_letter = 0
+letter_nodes = np.ones((position_count, letter_count)) * r_letter
+
+
+def run_cycle():
+    global feature_nodes, letter_nodes
+    
+    feature_decay, letter_decay = calculate_decay()
+    feature_neighbours_effect, letter_neighbours_effect = calculate_neighbours_effect()
+    
+    feature_nodes += - feature_decay + feature_neighbours_effect
+    letter_nodes += - letter_decay + letter_neighbours_effect
+
+
+def calculate_decay():
+    feature_decay = (feature_nodes - r_feature) * theta
+    letter_decay = (letter_nodes - r_letter) * theta
+    return feature_decay, letter_decay
+
+
+def calculate_neighbours_effect():
+    # There are no connections to the feature level except for the visual input
+    feature_neighbours_effect = np.zeros(feature_nodes.shape)
+    
+    # Equation 1
+    # Only the active (activation > 0) nodes get to send signals.
+    # Inhibitory connections have negative weights in this implementation
+    # This won't work! feature_nodes and letter_nodes would need to be vectors for this
+    net_input = (feature_nodes * (feature_nodes > 0) @ feature_to_letter_weights
+               + letter_nodes * (letter_nodes > 0) @ letter_to_letter_weights)
+    
+    # Equation 2 and 3
+    letter_neighbours_effect = np.where(
+        net_input > 0,
+        net_input * (M - feature_nodes),
+        net_input * (feature_nodes - m)
+    )
+
+
+feature_to_letter_weights = ???
+letter_to_letter_weights = ???
+

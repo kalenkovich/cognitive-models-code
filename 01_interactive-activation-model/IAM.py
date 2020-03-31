@@ -4,6 +4,7 @@
 import pandas as pd
 get_ipython().run_line_magic('matplotlib', 'inline')
 from matplotlib import pyplot as plt
+import numpy as np
 
 
 # # Load four letter words 
@@ -96,7 +97,7 @@ feature_coordinates = {
 
 # Function that draws one letter:
 
-def draw_letter(feature_list, feature_coordinates, axes):
+def draw_letter(feature_list, feature_coordinates, axes, color='k'):
     axes.grid()
     axes.set(xlim=(-1.2, 1.2), ylim=(-1.2, 1.2))
     
@@ -107,7 +108,7 @@ def draw_letter(feature_list, feature_coordinates, axes):
         line_coords = feature_coordinates[line_nmbr]
         x_values = [line_coords[0][0], line_coords[1][0]]
         y_values = [line_coords[0][1], line_coords[1][1]]
-        plt.plot(x_values, y_values, color = 'k', linewidth = 4)
+        axes.plot(x_values, y_values, color = color, linewidth = 4)
 
 
 plt.plot()
@@ -135,3 +136,61 @@ draw_letter_list(sorted(feature_numbers.keys())[:26], feature_numbers, feature_c
 # ![Font from Rumelhar & Siple, 1974](rumelhart-siple-font.jpg)
 
 # Looks correct.
+
+# # Feature perception
+
+M = 1.0  # max activation
+m = -0.2  # min activation
+theta = 0.07  # decay rate
+r_feature = 0  # resting state activation
+
+
+feature_count = len(list(feature_coordinates.keys()))
+position_count = 4
+feature_nodes = np.zeros((position_count, feature_count))
+
+
+# We'll have to represent the letters as a list of binary feature flags.
+
+features_binary = {
+    letter: [1 if i in feature_list else 0 for i in range(feature_count)]
+    for letter, feature_list in feature_numbers.items()}
+
+features_binary
+
+
+def present_word(word: str):
+    """
+    Activates features corresponding to the letters in the word
+    """
+    global feature_nodes
+    features_present = np.array([features_binary[letter] for letter in word])
+    feature_nodes = M * features_present
+
+
+def f():
+    global feature_nodes
+    decay = (feature_nodes - r_feature) * theta
+    feature_nodes = feature_nodes - decay
+
+
+def draw_features():
+    fig, axs = plt.subplots(ncols=4, nrows=1)
+    for pos_features, axes in zip(feature_nodes, axs):
+        a = max(pos_features)  # activation level
+        color = (1 - a, 1 - a, 1 - a)
+        draw_letter(feature_list=np.nonzero(pos_features)[0], 
+                    feature_coordinates=feature_coordinates, 
+                    axes=axes,
+                    color=color)
+
+
+np.set_printoptions(precision=2, floatmode='fixed')
+present_word('WORK')
+print(feature_nodes)
+for t in range(10):
+    print(f'\nafter {t + 1} cycles:')
+    f()
+    draw_features()
+    plt.show()
+

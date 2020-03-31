@@ -5,6 +5,7 @@ import pandas as pd
 get_ipython().run_line_magic('matplotlib', 'inline')
 from matplotlib import pyplot as plt
 import numpy as np
+from scipy.linalg import block_diag
 
 
 # # Load four letter words 
@@ -219,16 +220,26 @@ def calculate_decay():
     return feature_decay, letter_decay
 
 
+def calculate_layer_to_layer_input(layer_A, layer_B, weights):
+    """
+    Calculates net input from layer_A to layer_B with weights connecting them.
+    This function is necessary because we prefer to keep nodes in 4 x N arrays instead of long vectors
+    """
+    # Only the active (activation > 0) nodes get to send signals.
+    # Inhibitory connections have negative weights in this implementation
+    return (layer_A.ravel() * (layer_A.ravel() > 0) @ weights).reshape(layer_B.shape)
+
+
 def calculate_neighbours_effect():
     # There are no connections to the feature level except for the visual input
     feature_neighbours_effect = np.zeros(feature_nodes.shape)
     
     # Equation 1
     # Only the active (activation > 0) nodes get to send signals.
-    # Inhibitory connections have negative weights in this implementation
+    
     # This won't work! feature_nodes and letter_nodes would need to be vectors for this
-    net_input = (feature_nodes * (feature_nodes > 0) @ feature_to_letter_weights
-               + letter_nodes * (letter_nodes > 0) @ letter_to_letter_weights)
+    net_input = (calculate_layer_to_layer_input(feature_nodes, letter_nodes, feature_to_letter_weights)
+               + calculate_layer_to_layer_input(letter_nodes, letter_nodes, letter_to_letter_weights))
     
     # Equation 2 and 3
     letter_neighbours_effect = np.where(
@@ -238,6 +249,43 @@ def calculate_neighbours_effect():
     )
 
 
-feature_to_letter_weights = ???
-letter_to_letter_weights = ???
+# Letter-to-letter weights were set to zero so this one is easy.
+
+letter_to_letter_weights = np.zeros((letter_nodes.size, letter_nodes.size))
+
+
+# Each feature excites all the letter that contain it and inhibits all the others.
+
+letter_to_feature_excitatory = 0.005
+letter_to_feature_inhibitory = 0.15
+
+
+# Let's first build a binary array from features to letters in one position:
+
+is_excitatory = np.array([features_binary[letter] for letter in sorted(features_binary.keys())]).T
+
+is_excitatory
+
+
+feature_to_letter_weights_1 = np.where(
+    is_excitatory,
+    letter_to_feature_excitatory,
+    - letter_to_feature_inhibitory
+)
+
+feature_to_letter_weights_1
+
+
+# Now we just have to duplicate this array for each position. Since the weights are zeros across the four positions, we need a block-diagonal matrix made of four `feature_to_letter_weights_1`s along the diagonal.
+
+feature_to_letter_weights = block_diag(*[feature_to_letter_weights_1 for _ in range(4)])
+
+feature_to_letter_weights.shape
+
+
+# Each non-grey rectangle corresponds to weights from 14 features in a position to the 26 letters in the same position.
+# All the other weights are zero.
+# NB: Excitatory weights are close to 0, so they are grey as well.
+
+plt.matshow(feature_to_letter_weights, cmap='Set1')
 

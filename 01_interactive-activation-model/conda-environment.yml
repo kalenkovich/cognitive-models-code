@@ -47,6 +47,7 @@ dependencies:
   - pywin32=227=py37he774522_1
   - pyzmq=18.1.1=py37ha925a31_0
   - qt=5.9.7=vc14h73c81de_0
+  - scipy=1.4.1=py37h9439919_0
   - setuptools=46.1.1=py37_0
   - sip=4.19.8=py37h6538335_0
   - six=1.14.0=py37_0

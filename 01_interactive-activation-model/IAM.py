@@ -304,30 +304,44 @@ axes.matshow(feature_to_letter_weights, cmap='Set1')
 alphabet = sorted(features_binary.keys())
 
 
-def draw_letters(axes=None, title=None):
+def setup_letter_plot(test=False):
+    fig = plt.figure(figsize=(4, 10))
+    axes = fig.gca()
+    
+    axes.set_xlim((0, 4))
+    axes.set_ylim((0, 26))
+    axes.invert_yaxis()
+    
+    text_objects = [[axes.text(y=(i + 0.8), x=(pos + 0.2), s='A' if test else '', size=20)
+                     for i  in range(len(alphabet))]
+                    for pos in range(4)]
+    
+    return fig, axes, text_objects
+
+
+setup_letter_plot(test=True);
+
+
+def update_letter_plot(text_objects, axes=None, title=None):
     if not axes:
         fig = plt.figure(figsize=(4, 10))
         axes = fig.gca()
 
     axes.set_title(title)
     
-    axes.set_xlim((0, 4))
-    axes.set_ylim((0, 26))
-    axes.invert_yaxis()
-    for pos, letter_nodes_ in enumerate(letter_nodes):
-        for i, (letter, activation) in enumerate(zip(alphabet, letter_nodes_)):        
+    for pos, (letter_nodes_, text_objects_) in enumerate(zip(letter_nodes, text_objects)):
+        for i, (letter, activation, text_object) in enumerate(zip(alphabet, letter_nodes_, text_objects_)):        
+            text_object.set_text(letter)
             color = tuple([min(1 - activation, 1)] * 3)
-            axes.text(y=(i + 0.8), x=(pos + 0.2), 
-                      s=letter, size=20, color=color)
+            text_object.set_color(color)
 
 
 present_word('WORK')
 letter_nodes = np.ones((position_count, letter_count)) * r_letter
 
-fig = plt.figure(figsize=(4, 10))
-axes = fig.gca()
-for t in range(20):
+fig, axes, text_objects = setup_letter_plot()
+for t in range(50):
     run_cycle()
-    draw_letters(axes=axes, title=f'\nafter {t + 1} cycles:')
+    update_letter_plot(text_objects, axes=axes, title=f'\nafter {t + 1} cycles:')
     fig.canvas.draw()
 

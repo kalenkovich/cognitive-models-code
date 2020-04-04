@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import pandas as pd
-get_ipython().run_line_magic('matplotlib', 'inline')
+get_ipython().run_line_magic('matplotlib', 'notebook')
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy.linalg import block_diag
@@ -112,8 +112,8 @@ def draw_letter_features(feature_list, feature_coordinates, axes, color='k'):
         axes.plot(x_values, y_values, color = color, linewidth = 4)
 
 
-plt.plot()
-axes=plt.gca()
+fig = plt.figure()
+axes = fig.gca()
 draw_letter_features(feature_list=feature_numbers['A'], 
             feature_coordinates=feature_coordinates, 
             axes=axes)
@@ -175,12 +175,18 @@ def f():
     feature_nodes = feature_nodes - decay
 
 
-def draw_features():
-    fig, axs = plt.subplots(ncols=4, nrows=1)
+def draw_features(fig_axs=None, title=None):
+    if fig_axs is None:
+        fig, axs = plt.subplots(ncols=4, nrows=1)
+    else:
+        fig, axs = fig_axs
+    
+    fig.suptitle(title)
+    
     for pos_features, axes in zip(feature_nodes, axs):
         a = max(pos_features)  # activation level
         color = (1 - a, 1 - a, 1 - a)
-        draw_letter(feature_list=np.nonzero(pos_features)[0], 
+        draw_letter_features(feature_list=np.nonzero(pos_features)[0], 
                     feature_coordinates=feature_coordinates, 
                     axes=axes,
                     color=color)
@@ -189,11 +195,12 @@ def draw_features():
 np.set_printoptions(precision=2, floatmode='fixed')
 present_word('WORK')
 print(feature_nodes)
+
+fig, axs = plt.subplots(ncols=4, nrows=1)
 for t in range(10):
-    print(f'\nafter {t + 1} cycles:')
     f()
-    draw_features()
-    plt.show()
+    draw_features(fig_axs=(fig, axs), title=f'\nafter {t + 1} cycles:')
+    fig.canvas.draw()
 
 
 # # Letter layer
@@ -289,16 +296,21 @@ feature_to_letter_weights.shape
 # All the other weights are zero.
 # NB: Excitatory weights are close to 0, so they are grey as well.
 
-plt.matshow(feature_to_letter_weights, cmap='Set1')
+fig = plt.figure()
+axes = fig.gca()
+axes.matshow(feature_to_letter_weights, cmap='Set1')
 
 
 alphabet = sorted(features_binary.keys())
 
 
-def draw_letters():
-    fig = plt.figure(figsize=(4, 10))
-    axes = fig.gca()
+def draw_letters(axes=None, title=None):
+    if not axes:
+        fig = plt.figure(figsize=(4, 10))
+        axes = fig.gca()
 
+    axes.set_title(title)
+    
     axes.set_xlim((0, 4))
     axes.set_ylim((0, 26))
     axes.invert_yaxis()
@@ -312,9 +324,10 @@ def draw_letters():
 present_word('WORK')
 letter_nodes = np.ones((position_count, letter_count)) * r_letter
 
-for t in range(50):
-    print(f'\nafter {t + 1} cycles:')
+fig = plt.figure(figsize=(4, 10))
+axes = fig.gca()
+for t in range(20):
     run_cycle()
-    draw_letters()
-    plt.show()
+    draw_letters(axes=axes, title=f'\nafter {t + 1} cycles:')
+    fig.canvas.draw()
 

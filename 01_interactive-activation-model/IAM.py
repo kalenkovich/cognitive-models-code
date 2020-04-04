@@ -98,7 +98,7 @@ feature_coordinates = {
 
 # Function that draws one letter:
 
-def draw_letter(feature_list, feature_coordinates, axes, color='k'):
+def draw_letter_features(feature_list, feature_coordinates, axes, color='k'):
     axes.grid()
     axes.set(xlim=(-1.2, 1.2), ylim=(-1.2, 1.2))
     
@@ -114,24 +114,24 @@ def draw_letter(feature_list, feature_coordinates, axes, color='k'):
 
 plt.plot()
 axes=plt.gca()
-draw_letter(feature_list=feature_numbers['A'], 
+draw_letter_features(feature_list=feature_numbers['A'], 
             feature_coordinates=feature_coordinates, 
             axes=axes)
 
 
 # Now, let's draw all of them.
 
-def draw_letter_list(letter_list, feature_numbers, feature_coordinates):
+def draw_letter_features_all(letter_list, feature_numbers, feature_coordinates):
     N_letters = len(letter_list)
     fig, axs = plt.subplots(3, 9)
     for axes, lttr in zip(axs.flatten()[:N_letters], letter_list):
         plt.sca(axes)
-        draw_letter(feature_numbers[lttr], feature_coordinates, axes)
+        draw_letter_features(feature_numbers[lttr], feature_coordinates, axes)
     
     # Clear the last empty axes
     axs.flatten()[-1].axis('off');
     
-draw_letter_list(sorted(feature_numbers.keys())[:26], feature_numbers, feature_coordinates)
+draw_letter_features_all(sorted(feature_numbers.keys())[:26], feature_numbers, feature_coordinates)
 
 
 # ![Font from Rumelhar & Siple, 1974](rumelhart-siple-font.jpg)
@@ -244,9 +244,11 @@ def calculate_neighbours_effect():
     # Equation 2 and 3
     letter_neighbours_effect = np.where(
         net_input > 0,
-        net_input * (M - feature_nodes),
-        net_input * (feature_nodes - m)
+        net_input * (M - letter_nodes),
+        net_input * (letter_nodes - m)
     )
+    
+    return feature_neighbours_effect, letter_neighbours_effect
 
 
 # Letter-to-letter weights were set to zero so this one is easy.
@@ -288,4 +290,31 @@ feature_to_letter_weights.shape
 # NB: Excitatory weights are close to 0, so they are grey as well.
 
 plt.matshow(feature_to_letter_weights, cmap='Set1')
+
+
+alphabet = sorted(features_binary.keys())
+
+
+def draw_letters():
+    fig = plt.figure(figsize=(4, 10))
+    axes = fig.gca()
+
+    axes.set_xlim((0, 4))
+    axes.set_ylim((0, 26))
+    axes.invert_yaxis()
+    for pos, letter_nodes_ in enumerate(letter_nodes):
+        for i, (letter, activation) in enumerate(zip(alphabet, letter_nodes_)):        
+            color = tuple([min(1 - activation, 1)] * 3)
+            axes.text(y=(i + 0.8), x=(pos + 0.2), 
+                      s=letter, size=20, color=color)
+
+
+present_word('WORK')
+letter_nodes = np.ones((position_count, letter_count)) * r_letter
+
+for t in range(50):
+    print(f'\nafter {t + 1} cycles:')
+    run_cycle()
+    draw_letters()
+    plt.show()
 

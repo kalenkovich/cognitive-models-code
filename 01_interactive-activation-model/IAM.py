@@ -307,18 +307,26 @@ alphabet = sorted(features_binary.keys())
 
 # Run for a bit and save letter activations.
 
-present_word('WORK')
-letter_nodes = np.ones((position_count, letter_count)) * r_letter
+def present_word_and_run(word, cycle_count):
+    global letter_nodes
+    present_word(word)
+    # reset letter nodes
+    letter_nodes = np.ones((position_count, letter_count)) * r_letter
+
+    # "1 + " to save the initial state
+    history_shape = [1 + cycle_count] + list(letter_nodes.shape)
+    letters_history = np.empty(history_shape)
+
+    letters_history[0] = letter_nodes
+    for t in range(cycle_count):
+        run_cycle()
+        letters_history[t + 1] = letter_nodes
+        
+    return letters_history
+
 
 cycle_count = 20
-# "1 + " to save the initial state
-history_shape = [1 + cycle_count] + list(letter_nodes.shape)
-letters_history = np.empty(history_shape)
-
-letters_history[0] = letter_nodes
-for t in range(20):
-    run_cycle()
-    letters_history[t + 1] = letter_nodes
+letters_history = present_word_and_run(word='WORK', cycle_count=cycle_count)
 
 
 # Plot
@@ -362,3 +370,19 @@ get_ipython().run_cell_magic('capture', '', "fig, axes, text_objects = setup_let
 
 line_ani
 
+
+# "O" and "Q" are equally activated becase all of the "O" features are present in "Q" as well.
+# "Q" is not inhibited because only features that are not present in "Q" could do that.
+# Let's check that "WQRK" would not activate "O" because "Q" does have a feature absent in "O".
+
+cycle_count = 20
+letters_history = present_word_and_run(word='WQRK', cycle_count=cycle_count)
+
+
+get_ipython().run_cell_magic('capture', '', "fig, axes, text_objects = setup_letter_plot();\n\nline_ani = anim.FuncAnimation(fig, \n                              lambda t: update_letter_plot(text_objects, t, axes=axes, title=f'\\nafter {t + 1} cycles:'), \n                              frames=range(0, cycle_count + 1), blit=True, repeat=True)\nrc('animation', html='jshtml')")
+
+
+line_ani
+
+
+# "O" was inhibited by the tail of "Q".

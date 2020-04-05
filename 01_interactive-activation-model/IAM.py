@@ -4,6 +4,7 @@
 import pandas as pd
 get_ipython().run_line_magic('matplotlib', 'notebook')
 from matplotlib import pyplot as plt
+from matplotlib import animation as anim, rc
 import numpy as np
 from scipy.linalg import block_diag
 
@@ -304,15 +305,33 @@ axes.matshow(feature_to_letter_weights, cmap='Set1')
 alphabet = sorted(features_binary.keys())
 
 
+# Run for a bit and save letter activations.
+
+present_word('WORK')
+letter_nodes = np.ones((position_count, letter_count)) * r_letter
+
+cycle_count = 20
+# "1 + " to save the initial state
+history_shape = [1 + cycle_count] + list(letter_nodes.shape)
+letters_history = np.empty(history_shape)
+
+letters_history[0] = letter_nodes
+for t in range(20):
+    run_cycle()
+    letters_history[t + 1] = letter_nodes
+
+
+# Plot
+
 def setup_letter_plot(test=False):
-    fig = plt.figure(figsize=(4, 10))
+    fig = plt.figure(figsize=(6, 6))
     axes = fig.gca()
     
     axes.set_xlim((0, 4))
     axes.set_ylim((0, 26))
     axes.invert_yaxis()
     
-    text_objects = [[axes.text(y=(i + 0.8), x=(pos + 0.2), s='A' if test else '', size=20)
+    text_objects = [[axes.text(y=(i + 0.8), x=(pos + 0.2), s='A' if test else '', size=10)
                      for i  in range(len(alphabet))]
                     for pos in range(4)]
     
@@ -322,26 +341,24 @@ def setup_letter_plot(test=False):
 setup_letter_plot(test=True);
 
 
-def update_letter_plot(text_objects, axes=None, title=None):
+def update_letter_plot(text_objects, t, axes=None, title=None):
     if not axes:
         fig = plt.figure(figsize=(4, 10))
         axes = fig.gca()
 
     axes.set_title(title)
     
-    for pos, (letter_nodes_, text_objects_) in enumerate(zip(letter_nodes, text_objects)):
+    for pos, (letter_nodes_, text_objects_) in enumerate(zip(letters_history[t], text_objects)):
         for i, (letter, activation, text_object) in enumerate(zip(alphabet, letter_nodes_, text_objects_)):        
             text_object.set_text(letter)
             color = tuple([min(1 - activation, 1)] * 3)
             text_object.set_color(color)
+            
+    return (text_object for row in text_objects for text_object in row)
 
 
-present_word('WORK')
-letter_nodes = np.ones((position_count, letter_count)) * r_letter
+get_ipython().run_cell_magic('capture', '', "fig, axes, text_objects = setup_letter_plot();\n\nline_ani = anim.FuncAnimation(fig, \n                              lambda t: update_letter_plot(text_objects, t, axes=axes, title=f'\\nafter {t + 1} cycles:'), \n                              frames=range(0, cycle_count + 1), blit=True, repeat=True)\nrc('animation', html='jshtml')")
 
-fig, axes, text_objects = setup_letter_plot()
-for t in range(50):
-    run_cycle()
-    update_letter_plot(text_objects, axes=axes, title=f'\nafter {t + 1} cycles:')
-    fig.canvas.draw()
+
+line_ani
 

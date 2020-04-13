@@ -42,104 +42,161 @@ letter_count = len(list(feature_numbers.keys()))
 alphabet = sorted(feature_numbers.keys())
 
 
+class Connection(object):
+    def __init__(self, layer_from, layer_to, weights):
+        self.layer_from = layer_from
+        self.layer_to = layer_to
+        
+        # This way weights can be a constant
+        weights_shape = (layer_from.size, layer_to.size)
+        self.weights = np.ones(weights_shape) * weights
+       
+        layer_to.add_connection(self)
+    
+    def calculate_net_input(self):
+        activations_from = self.layer_from.activations
+        return (
+            (activations_from.ravel() * (activations_from.ravel() > 0) @ self.weights)
+                .reshape(self.layer_to.shape))
+
+
+class Layer(object):
+    def __init__(self, 
+                 shape, 
+                 resting_activation,
+                 minimum_activation,
+                 maximum_activation,
+                 decay_rate):
+        self.shape = shape
+        self.resting_activation = resting_activation
+        self.minimum_activation = minimum_activation
+        self.maximum_activation = maximum_activation
+        self.decay_rate = decay_rate
+        self.connections = []
+        
+        self.reset()
+        
+    @property
+    def size(self):
+        return self.activations.size
+        
+    def reset(self):
+        self.activations = np.ones(self.shape) * self.resting_activation
+        
+    def calculate_decay(self):
+        return (self.activations - self.resting_activation) * self.decay_rate
+    
+    def calculate_neighbours_effect(self):
+        if not self.connections:
+            return 0
+        
+        net_input = sum(
+            connection.calculate_net_input()
+            for connection in self.connections)
+        
+        return np.where(
+            net_input > 0,
+            net_input * (self.maximum_activation - self.activations),
+            net_input * (self.activations - self.minimum_activation)
+        )
+    
+    def run_cycle(self):        
+        self.activations += - self.calculate_decay() + self.calculate_neighbours_effect()
+        
+    def add_connection(self, connection: Connection):
+        self.connections.append(connection)
+
+
+class FeatureLayer(Layer):
+    def present_word(self, word):
+        """Show a word to the model"""
+        features_present = np.array([features_binary[letter] for letter in word])
+        # Set features present in the word to the maximum activation
+        self.activations = self.maximum_activation * features_present
+
+
+class LetterLayer(Layer):
+    def print_active_letters(self):
+        for i in range(self.shape[0]):
+            active_letters = np.array(alphabet)[self.activations[i] > 0]
+            print(f'letter {i+1}: {active_letters}')
+
+
 class IAM(object):
     
     def __init__(self):
         # Parameters
-        self.M = 1.0  # maximum activation
-        self.m = -0.2  # minimum activation
-        self.theta = 0.07  # decay rate
-        self.r_feature = 0  # baseline activation of the feature nodes
-        self.r_letter = 0  # baseline activation of the letter nodes
         self.position_count = 4  # number of letters
-        self.feature_to_letter_excitatory = 0.005
-        self.feature_to_letter_inhibitory = 0.15
         
-        # Nodes
-        self.initialize_nodes()
+        # Layers
+        M = 1.0  # maximum activation
+        m = -0.2  # minimum activation
+        theta = 0.07  # decay rate
         
-        # Weights
-        self.letter_to_letter_weights = np.zeros((self.letter_nodes.size, 
-                                                  self.letter_nodes.size))
+        self.feature_layer = FeatureLayer(
+            shape=(self.position_count, feature_count),
+            resting_activation=0,
+            minimum_activation=m,
+            maximum_activation=M,
+            decay_rate=theta)
+        
+        self.letter_layer = LetterLayer(
+            shape=(self.position_count, letter_count),
+            resting_activation=0,
+            minimum_activation=m,
+            maximum_activation=M,
+            decay_rate=theta)
+        
+        # Connections
+        letter_to_letter_connection = Connection(
+            layer_from=self.letter_layer,
+            layer_to=self.letter_layer,
+            weights=0
+        )
+        
+        # Each feature excites letters that contain it and inhibits those that don't
         is_excitatory = np.array([features_binary[letter] 
                                   for letter 
                                   in sorted(features_binary.keys())]).T
-        # For one position
+        # For one letter
+        feature_to_letter_excitatory = 0.005
+        feature_to_letter_inhibitory = 0.15
         feature_to_letter_weights_1 = np.where(
             is_excitatory,
-            self.feature_to_letter_excitatory,
-            - self.feature_to_letter_inhibitory
+            feature_to_letter_excitatory,
+            - feature_to_letter_inhibitory
         )
-        # For all positions
-        self.feature_to_letter_weights = block_diag(
+        # For all letters
+        feature_to_letter_weights = block_diag(
             *[feature_to_letter_weights_1 for _ in range(4)])
+        feature_to_letter_connection = Connection(
+            layer_from=self.feature_layer,
+            layer_to=self.letter_layer,
+            weights=feature_to_letter_weights
+        )
         
-    def initialize_nodes(self):
-        self.feature_nodes = np.ones((self.position_count, feature_count)) * self.r_feature
-        self.letter_nodes = np.ones((self.position_count, letter_count)) * self.r_letter
+    @property
+    def layers(self):
+        return (self.feature_layer, self.letter_layer)
+    
+    def reset_nodes(self):
+        for layer in self.layers:
+            layer.reset()
         
     def present_word(self, word: str):
         """Show a word to the model"""
-        features_present = np.array([features_binary[letter] for letter in word])
-        # Set features present in the word to the maximum activation
-        self.feature_nodes = self.M * features_present
-    
-    def calculate_decay(self):
-        feature_decay = (self.feature_nodes - self.r_feature) * self.theta
-        letter_decay = (self.letter_nodes - self.r_letter) * self.theta
-        return feature_decay, letter_decay
-    
-    @staticmethod
-    def calculate_layer_to_layer_input(layer_A, layer_B, weights):
-        """
-        Calculates net input from layer_A to layer_B with weights connecting them.
-        This function is necessary because we prefer to keep nodes in 4 x N arrays instead of long vectors
-        """
-        # Only the active (activation > 0) nodes get to send signals.
-        # Inhibitory connections have negative weights in this implementation
-        return (layer_A.ravel() * (layer_A.ravel() > 0) @ weights).reshape(layer_B.shape)
-    
-    def calculate_neighbours_effect(self):
-        # There are no connections to the feature level except for the visual input
-        feature_neighbours_effect = np.zeros(self.feature_nodes.shape)
-
-        # Equation 1
-        # Only the active (activation > 0) nodes get to send signals.
-
-        net_input = (
-            self.calculate_layer_to_layer_input(
-                self.feature_nodes, 
-                self.letter_nodes, 
-                self.feature_to_letter_weights)
-            + self.calculate_layer_to_layer_input(
-                self.letter_nodes, 
-                self.letter_nodes, 
-                self.letter_to_letter_weights))
-
-        # Equation 2 and 3
-        letter_neighbours_effect = np.where(
-            net_input > 0,
-            net_input * (self.M - self.letter_nodes),
-            net_input * (self.letter_nodes - self.m)
-        )
-
-        return feature_neighbours_effect, letter_neighbours_effect
+        self.feature_layer.present_word(word)
     
     def run_cycle(self):        
-        feature_decay, letter_decay = self.calculate_decay()
-        feature_neighbours_effect, letter_neighbours_effect = self.calculate_neighbours_effect()
-        
-        self.feature_nodes += - feature_decay + feature_neighbours_effect
-        self.letter_nodes += - letter_decay + letter_neighbours_effect
+        for layer in self.layers:
+            layer.run_cycle()
         
     def run_n_cycles(self, n: int):
         for _ in range(n):
             self.run_cycle()
             
     def print_active_letters(self):
-        for i in range(4):
-            active_letters = np.array(alphabet)[iam.letter_nodes[i] > 0]
-            print(f'letter {i+1}: {active_letters}')
+        self.letter_layer.print_active_letters()
 
 
 iam = IAM()
@@ -148,7 +205,7 @@ iam.run_cycle()
 iam.print_active_letters()
 
 
-iam.initialize_nodes()
+iam.reset_nodes()
 iam.present_word('WQRK')
 iam.run_cycle()
 iam.print_active_letters()

@@ -266,8 +266,8 @@ letter_to_letter_weights = np.zeros((letter_nodes.size, letter_nodes.size))
 
 # Each feature excites all the letter that contain it and inhibits all the others.
 
-letter_to_feature_excitatory = 0.005
-letter_to_feature_inhibitory = 0.15
+feature_to_letter_excitatory = 0.005
+feature_to_letter_inhibitory = 0.15
 
 
 # Let's first build a binary array from features to letters in one position:
@@ -279,8 +279,8 @@ is_excitatory
 
 feature_to_letter_weights_1 = np.where(
     is_excitatory,
-    letter_to_feature_excitatory,
-    - letter_to_feature_inhibitory
+    feature_to_letter_excitatory,
+    - feature_to_letter_inhibitory
 )
 
 feature_to_letter_weights_1

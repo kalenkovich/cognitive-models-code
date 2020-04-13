@@ -52,8 +52,8 @@ class IAM(object):
         self.r_feature = 0  # baseline activation of the feature nodes
         self.r_letter = 0  # baseline activation of the letter nodes
         self.position_count = 4  # number of letters
-        self.letter_to_feature_excitatory = 0.005
-        self.letter_to_feature_inhibitory = 0.15
+        self.feature_to_letter_excitatory = 0.005
+        self.feature_to_letter_inhibitory = 0.15
         
         # Nodes
         self.initialize_nodes()
@@ -67,8 +67,8 @@ class IAM(object):
         # For one position
         feature_to_letter_weights_1 = np.where(
             is_excitatory,
-            self.letter_to_feature_excitatory,
-            - self.letter_to_feature_inhibitory
+            self.feature_to_letter_excitatory,
+            - self.feature_to_letter_inhibitory
         )
         # For all positions
         self.feature_to_letter_weights = block_diag(

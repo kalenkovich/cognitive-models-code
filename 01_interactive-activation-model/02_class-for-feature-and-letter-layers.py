@@ -74,6 +74,8 @@ class Layer(object):
         self.decay_rate = decay_rate
         self.connections = []
         
+        self._activation_delta = None
+        
         self.reset()
         
     @property
@@ -100,8 +102,12 @@ class Layer(object):
             net_input * (self.activations - self.minimum_activation)
         )
     
-    def run_cycle(self):        
-        self.activations += - self.calculate_decay() + self.calculate_neighbours_effect()
+    def calculate_activation_delta(self):
+        self._activation_delta = - self.calculate_decay() + self.calculate_neighbours_effect()
+    
+    def update_activations(self):        
+        self.activations += self._activation_delta
+        self._activation_delta = None
         
     def add_connection(self, connection: Connection):
         self.connections.append(connection)
@@ -189,7 +195,9 @@ class IAM(object):
     
     def run_cycle(self):        
         for layer in self.layers:
-            layer.run_cycle()
+            layer.calculate_activation_delta()
+        for layer in self.layers:
+            layer.update_activations()
         
     def run_n_cycles(self, n: int):
         for _ in range(n):

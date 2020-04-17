@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.linalg import block_diag
 
 
@@ -37,6 +38,11 @@ features_binary = {
     for letter, feature_list in feature_numbers.items()}
 letter_count = len(list(feature_numbers.keys()))
 alphabet = sorted(feature_numbers.keys())
+
+
+def load_corpus(n_letters=4, minimum_frequency=5):
+    kf_corpus = pd.read_csv('kfpool.txt', header=None, sep=' ', names=['word', 'frequency'])
+    return kf_corpus[(kf_corpus.word.str.len() == 4) & (kf_corpus.frequency >= minimum_frequency)]
 
 
 class Connection(object):

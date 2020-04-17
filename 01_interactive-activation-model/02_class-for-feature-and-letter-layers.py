@@ -135,23 +135,25 @@ class IAM(object):
         self.position_count = 4  # number of letters
         
         # Layers
-        M = 1.0  # maximum activation
-        m = -0.2  # minimum activation
-        theta = 0.07  # decay rate
+        self.M = 1.0  # maximum activation
+        self.m = -0.2  # minimum activation
+        self.theta = 0.07  # decay rate
         
         self.feature_layer = FeatureLayer(
             shape=(self.position_count, feature_count),
             resting_activation=0,
-            minimum_activation=m,
-            maximum_activation=M,
-            decay_rate=theta)
+            minimum_activation=self.m,
+            maximum_activation=self.M,
+            decay_rate=self.theta)
         
         self.letter_layer = LetterLayer(
             shape=(self.position_count, letter_count),
             resting_activation=0,
-            minimum_activation=m,
-            maximum_activation=M,
-            decay_rate=theta)
+            minimum_activation=self.m,
+            maximum_activation=self.M,
+            decay_rate=self.theta)
+        
+        self._layers = [self.feature_layer, self.letter_layer]
         
         # Connections
         letter_to_letter_connection = Connection(
@@ -183,7 +185,7 @@ class IAM(object):
         
     @property
     def layers(self):
-        return (self.feature_layer, self.letter_layer)
+        return self._layers
     
     def reset_nodes(self):
         for layer in self.layers:

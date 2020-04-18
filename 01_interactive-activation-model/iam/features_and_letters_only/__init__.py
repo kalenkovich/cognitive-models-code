@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 import numpy as np
+import pandas as pd
 from scipy.linalg import block_diag
 
 
@@ -42,6 +40,11 @@ letter_count = len(list(feature_numbers.keys()))
 alphabet = sorted(feature_numbers.keys())
 
 
+def load_corpus(n_letters=4, minimum_frequency=5):
+    kf_corpus = pd.read_csv('kfpool.txt', header=None, sep=' ', names=['word', 'frequency'])
+    return kf_corpus[(kf_corpus.word.str.len() == 4) & (kf_corpus.frequency >= minimum_frequency)]
+
+
 class Connection(object):
     def __init__(self, layer_from, layer_to, weights):
         self.layer_from = layer_from
@@ -73,8 +76,6 @@ class Layer(object):
         self.maximum_activation = maximum_activation
         self.decay_rate = decay_rate
         self.connections = []
-        
-        self._activation_delta = None
         
         self.reset()
         
@@ -207,33 +208,3 @@ class IAM(object):
             
     def print_active_letters(self):
         self.letter_layer.print_active_letters()
-
-
-iam = IAM()
-iam.present_word('WORK')
-iam.run_cycle()
-iam.print_active_letters()
-
-
-iam.reset_nodes()
-iam.present_word('WQRK')
-iam.run_cycle()
-iam.print_active_letters()
-
-
-# We've copied the code to the `iam` module. Let's test the version imported from there.
-
-from iam.features_and_letters_only import IAM as IAMTest
-
-
-iam_test = IAMTest()
-iam_test.present_word('WORK')
-iam_test.run_cycle()
-iam_test.print_active_letters()
-
-
-iam_test.reset_nodes()
-iam_test.present_word('WQRK')
-iam_test.run_cycle()
-iam_test.print_active_letters()
-

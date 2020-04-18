@@ -4,7 +4,7 @@
 import numpy as np
 
 
-from iam import IAM, Layer, load_corpus, alphabet, Connection
+from iam.features_and_letters_only import IAM, Layer, load_corpus, alphabet, Connection
 
 
 # Load the words

@@ -172,3 +172,5 @@ iam_with_words_2.print_active_letters()
 
 
 # Now, "work" is the only active word.
+
+# *Exercise*: set word-to-word inhibition to zero. Run the model until you see an overflow warning. Find out why you get this warning.

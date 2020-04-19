@@ -223,7 +223,7 @@ iam.print_active_letters()
 
 # We've copied the code to the `iam` module. Let's test the version imported from there.
 
-from iam import IAM as IAMTest
+from iam.features_and_letters_only import IAM as IAMTest
 
 
 iam_test = IAMTest()

@@ -174,3 +174,38 @@ iam_with_words_2.print_active_letters()
 # Now, "work" is the only active word.
 
 # *Exercise*: set word-to-word inhibition to zero. Run the model until you see an overflow warning. Find out why you get this warning.
+
+# Let's check that the code we've moved to the `iam` module behaves in the same way.
+
+from iam import IAM as IAMTest
+
+
+iam_with_words_2_test = IAMWithWords2()
+iam_with_words_2_test.present_word('WORK')
+iam_test = IAMTest()
+iam_test.present_word('WORK')
+
+
+# Test that activations are identical.
+iam_test.run_cycle()
+iam_with_words_2_test.run_cycle()
+
+
+def check_equal():
+    return all([
+        np.array_equal(layer_A.activations, layer_B.activations)
+        for layer_A, layer_B in zip(iam_test.layers, iam_with_words_2_test.layers)
+    ])
+
+
+check_equal()
+
+
+identical_activations = list()
+for _ in range(50):
+    iam_test.run_cycle()
+    iam_with_words_2_test.run_cycle()
+    identical_activations.append(check_equal())
+    
+print(all(identical_activations))
+

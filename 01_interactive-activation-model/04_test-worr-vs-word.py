@@ -50,9 +50,6 @@ def get_word_activation(word):
     return iam.word_layer.activations[word_index]
 
 
-
-
-
 def take_snapshot():
     for letter, activation_list in letter_activations_history.items():
         activation_list.append(get_letter_activation(position=3, letter=letter))
@@ -73,10 +70,26 @@ for _ in range(40):
     take_snapshot()
 
 
+plt.figure(figsize=(10, 6))
 plt.plot(np.array(list(letter_activations_history.values())).T)
-plt.legend(list(letter_activations_history.keys()))
+plt.legend(list(letter_activations_history.keys()), loc='upper left')
+plt.grid()
+plt.yticks(np.arange(-0.2, 1.1, 0.1));
 
 
+# ![](work-word_letter-activation-plots.png)
+
+# - In our simulation, "D" gets uninhibited, in the article, "D" stayst at -0.2
+# - In our simulation, "R" gets a bit activated (~0.1) and then decays towards 0, in the article, "R" grows steadily towards ~0.35
+
+plt.figure(figsize=(10, 6))
 plt.plot(np.array(list(word_activations_history.values())).T)
-plt.legend(list(word_activations_history.keys()))
+plt.legend(list(word_activations_history.keys()), loc='upper left')
+plt.grid()
+plt.yticks(np.arange(-0.2, 1.1, 0.1));
 
+
+# ![](work-word_word-activation-plots.png)
+
+# - "WORD" get less activate at the peak (~0.03) than in the article (~0.1).
+# - "WEAK" and "WEAR" plateau later in our simulation.

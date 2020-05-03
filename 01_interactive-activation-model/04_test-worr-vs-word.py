@@ -201,9 +201,10 @@ letter_activations_history = dict(K=[], R = [], D = [])
 word_activations_history = dict(WORK=[], WORD=[], WEAK=[], WEAR=[])
 
 iam_with_absence_detectors.reset_nodes()
-present_ambiguous_input_2()
 
 take_snapshot_2()
+present_ambiguous_input_2()
+
 for _ in range(40):
     iam_with_absence_detectors.run_cycle()
     take_snapshot_2()
@@ -225,4 +226,48 @@ plt.grid()
 plt.yticks(np.arange(-0.2, 1.1, 0.1));
 
 
+# # Present the stimulus constantly
+
+# The problem seems to be with the feature nodes decaying. 
+# We will now imitate constant presentation of the stimulus that will override the decay.
+
 # ![](work-word_word-activation-plots.png)
+
+letter_activations_history = dict(K=[], R = [], D = [])
+word_activations_history = dict(WORK=[], WORD=[], WEAK=[], WEAR=[])
+
+iam_with_absence_detectors.reset_nodes()
+
+take_snapshot_2()
+
+for _ in range(40):
+    present_ambiguous_input_2()
+    iam_with_absence_detectors.run_cycle()
+    take_snapshot_2()
+
+
+plt.figure(figsize=(10, 6))
+plt.plot(np.array(list(letter_activations_history.values())).T)
+plt.legend(list(letter_activations_history.keys()), loc='upper left')
+plt.grid()
+plt.yticks(np.arange(-0.2, 1.1, 0.1));
+
+
+# ![](work-word_letter-activation-plots.png)
+
+plt.figure(figsize=(10, 6))
+plt.plot(np.array(list(word_activations_history.values())).T)
+plt.legend(list(word_activations_history.keys()), loc='upper left')
+plt.grid()
+plt.yticks(np.arange(-0.2, 1.1, 0.1));
+
+
+# ![](work-word_word-activation-plots.png)
+
+# The plots already look similar.
+# There are still some differences:
+# - "D" gets inhibited too fast
+# - "K" and "R" are a tiny little bit more activated
+# - "D" gets inhibite below the minimum 
+# - There is jittering of the ativations in the beginning.
+# - "WORD does not get ativated as much

@@ -1,0 +1,15 @@
+# Experiment 1: The Word Advantage and the Effects of Visual Conditions
+
+The experiment simulated here is based on Johnston & McClelland (1973).
+
+**Task.**
+
+Participants look at either a word (e.g., "READ"; "Word" condition) or a single letter embedded within
+number signs (e.g., "#E##", "Letter with number signs" condition).
+Then they are forced to choose between READ and ROAD, thus choosing between E and O in the second position.
+
+There are actually two experiments: "Bright target/patterned mask" and "Dim target/blank mask".
+In the "Bright target/patterned mask" condition, a high-contrast stimulus is displayed for a short amount of
+time after which the patterned mask is displayed instead.
+In the "Dim target/blank mask" a poorly lit stimulus is displayed for a short amount of
+time after which it simply disappears.

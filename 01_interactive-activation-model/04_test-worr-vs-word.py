@@ -146,7 +146,7 @@ class IAMWithAbsenceDetectors(IAM):
             weights=absence_detector_to_letter_weights
         )
         
-    def present_word(word):
+    def present_word(self, word):
         # Feature presence layer
         super().present_word(word)
         self.absence_detector_layer.present_word(word)
@@ -345,3 +345,33 @@ assert consistent_count == 2
 # We have not implemented frequency-dependent resting states for word nodes but those will be negative anyways.
 
 # We don't have an explanation for the different initial behavior of "D" and will move on for now.
+
+# # Check the implementation in the submodule
+
+from iam.added_absence_detectors import IAM as IAMTest
+
+
+iam_test = IAMTest()
+
+
+iam_test.reset_nodes()
+iam_with_absence_detectors.reset_nodes()
+
+iam_with_absence_detectors.present_word('WORM')
+iam_test.present_word('WORM')
+
+iam_with_absence_detectors.run_n_cycles(40)
+iam_test.run_n_cycles(40)
+
+
+np.allclose(iam_test.feature_layer.activations, 
+            iam_with_absence_detectors.feature_layer.activations)
+
+
+np.allclose(iam_test.letter_layer.activations, 
+            iam_with_absence_detectors.letter_layer.activations)
+
+
+np.allclose(iam_test.word_layer.activations, 
+            iam_with_absence_detectors.word_layer.activations)
+

@@ -124,6 +124,14 @@ class FeatureLayer(Layer):
         features_present = np.array([features_binary[letter] for letter in word])
         # Set features present in the word to the maximum activation
         self.activations = self.maximum_activation * features_present
+        
+        
+class AbsenceDetectorLayer(FeatureLayer):
+    def present_word(self, word):
+        """Show a word to the model"""
+        features_absent = 1 - np.array([features_binary[letter] for letter in word])
+        # Set features absent in the word to the maximum activation
+        self.activations = self.maximum_activation * features_absent
 
 
 class LetterLayer(Layer):
@@ -151,6 +159,13 @@ class IAM(object):
             maximum_activation=self.M,
             decay_rate=self.theta)
         
+        self.absence_detector_layer = AbsenceDetectorLayer(
+            shape=(self.position_count, feature_count),
+            resting_activation=0,
+            minimum_activation=self.m,
+            maximum_activation=self.M,
+            decay_rate=self.theta)
+        
         self.letter_layer = LetterLayer(
             shape=(self.position_count, letter_count),
             resting_activation=0,
@@ -166,7 +181,8 @@ class IAM(object):
             decay_rate=self.theta
         )
         
-        self._layers = [self.feature_layer, self.letter_layer, self.word_layer]
+        self._layers = [self.feature_layer, self.absence_detector_layer, 
+                        self.letter_layer, self.word_layer]
         
         # Connections
         letter_to_letter_connection = Connection(
@@ -195,6 +211,21 @@ class IAM(object):
             layer_from=self.feature_layer,
             layer_to=self.letter_layer,
             weights=feature_to_letter_weights
+        )
+        
+        # For one letter
+        absence_detector_to_letter_weights_1 = np.where(
+            1 - is_excitatory,
+            feature_to_letter_excitatory,
+            - feature_to_letter_inhibitory
+        )
+        # For all letters
+        absence_detector_to_letter_weights = block_diag(
+            *[absence_detector_to_letter_weights_1 for _ in range(4)])
+        absence_detector_to_letter_connection = Connection(
+            layer_from=self.absence_detector_layer,
+            layer_to=self.letter_layer,
+            weights=absence_detector_to_letter_weights
         )
         
         # Letter-to-word connections
@@ -260,6 +291,7 @@ class IAM(object):
     def present_word(self, word: str):
         """Show a word to the model"""
         self.feature_layer.present_word(word)
+        self.absence_detector_layer.present_word(word)
     
     def run_cycle(self):        
         for layer in self.layers:
@@ -273,3 +305,10 @@ class IAM(object):
             
     def print_active_letters(self):
         self.letter_layer.print_active_letters()
+        
+    def get_letter_activation(self, position, letter):
+        return self.letter_layer.activations[position, alphabet.index(letter)]
+    
+    def get_word_activation(self, word):
+        word_index = corpus.word.tolist().index(word.lower())
+        return self.word_layer.activations[word_index]

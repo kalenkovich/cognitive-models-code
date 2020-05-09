@@ -270,4 +270,78 @@ plt.yticks(np.arange(-0.2, 1.1, 0.1));
 # - "K" and "R" are a tiny little bit more activated
 # - "D" gets inhibite below the minimum 
 # - There is jittering of the ativations in the beginning.
-# - "WORD does not get ativated as much
+# - "WORD does not get activated as much
+
+# # Why does "D" get inhibited so much in the first cycle?
+
+# ## Number of active detectors consistent and inconsistent with "D".
+
+print('Active feature detectors:')
+print(rk_common_features)
+print()
+
+print('Active absence detectors:')
+print(rk_common_absent_features)
+print()
+
+print('Features present in "D":')
+print(features_binary['D'])
+
+
+# Inconsistent features: 
+# - present in R and K but absent from D, or
+# - absent from R and K but present in D.
+
+in_R_and_K_not_in_D = [1 if rk_f == 1 and d_f == 0 else 0 for rk_f, d_f in zip(rk_common_features, features_binary['D'])]
+not_in_R_and_K_in_D = [1 if rk_abs_f == 1 and d_f == 1 else 0 
+                       for rk_abs_f, d_f in zip(rk_common_absent_features, features_binary['D'])]
+
+inconsistent_count = sum(in_R_and_K_not_in_D) + sum(not_in_R_and_K_in_D)
+print(f'Number of active inconsistent detectors: {inconsistent_count}')
+
+
+# Inconsistent absent features: .
+
+in_R_and_K_in_D = [1 if rk_f == 1 and d_f == 1 else 0 for rk_f, d_f in zip(rk_common_features, features_binary['D'])]
+not_in_R_and_K_not_in_D = [1 if rk_abs_f == 1 and d_f == 0 else 0 
+                           for rk_abs_f, d_f in zip(rk_common_absent_features, features_binary['D'])]
+
+consistent_count = sum(in_R_and_K_in_D) + sum(not_in_R_and_K_not_in_D)
+print(f'Number of active consistent detectors: {consistent_count}')
+
+
+# Each active detector is either consistent or inconsistent with "D". Let's chech this.
+
+assert sum(rk_common_features) + sum(rk_common_absent_features) == inconsistent_count + consistent_count
+
+
+# ## Activation of "D" after the first cycle
+
+assert inconsistent_count == 8
+assert consistent_count == 2
+
+
+# Each active detector of a consistent feature excites "D" by $0.005$, each inconsistent one inhibits by $0.15$.
+# The net input is calculated in Formula 1:
+# 
+# $$n_i(t) = \sum_j\alpha_{ij}e_j(t) - \sum_k\gamma_{ik}i_k(t)$$
+# 
+# Therefore, the net input to "D" is 
+# $$0.005 * 2 - 0.15 * 8 = -1.19$$
+
+# The net input is negative, therefore the effect of the input on a node is given by formula 3:
+# 
+# $$\epsilon_i(t)=n_i(t)(a_i(t)-m)$$
+# 
+# The initial activation of "D" is 0, the minimum activation of all nodes is $-0.2$, thus the effect on "D" is 
+# 
+# $$-1.19(0-(-0.2)) = -0.238$$
+# 
+# which is equal to the activation of "D" after the first cycle because it had zero activation before.
+# Even if we restrict all activations to be between $m$ and $M$, the "D" activation will still reach $m$ after the first cycle, not in ~5 cycles as it did in the paper.
+
+# The only other source of "D" activation is the word layer.
+# And the words are not active before the first cycle.
+# We have not implemented frequency-dependent resting states for word nodes but those will be negative anyways.
+
+# We don't have an explanation for the different initial behavior of "D" and will move on for now.

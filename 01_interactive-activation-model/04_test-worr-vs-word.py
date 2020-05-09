@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from scipy.linalg import block_diag
 
 
-from iam import IAM, features_binary, alphabet, corpus, FeatureLayer, feature_count, Connection
+from iam.all_three_layers import IAM, features_binary, alphabet, corpus, FeatureLayer, feature_count, Connection
 
 
 iam = IAM()

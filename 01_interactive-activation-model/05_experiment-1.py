@@ -11,17 +11,35 @@ from iam.added_absence_detectors import IAM
 iam = IAM()
 
 
-iam.feature_layer
-iam.absence_detector_layer
-
-
 # # Bright target/patterned mask
 
-# ## Word condition 
+def present_mask_at(iam, position):
+    patterned_mask = np.hstack((np.ones((1, 9)), np.zeros((1, 14 - 9))))
+    iam.feature_layer.activations[position, :] = patterned_mask
+    iam.absence_detector_layer.activations[position, :] = 1 - patterned_mask
 
-def run_bright_trial(iam, word):
+
+def present_mask(iam):
+    for position in range(4):
+        present_mask_at(iam, position)
+
+
+def present_nothing_at(iam, position):
+    iam.feature_layer.activations[position, :] = np.zeros(14)
+    iam.absence_detector_layer.activations[position, :] = np.zeros(14)
+
+
+def present_letter(iam, word, position):
+    iam.present_word(word)
+    for j in range(4):
+        if j == position:
+            continue
+        present_nothing_at(iam, j)
+
+
+def run_bright_trial(iam, word, letter_position=None):
     letter_activations_history = dict(K=[], R = [], D = [], E = [])
-    word_activations_history = dict(WORK=[], WORD=[], WEAK=[], WEAR=[])
+    word_activations_history = dict(READ=[], DEAL=[])
     
     def take_snapshot():
         for letter, activation_list in letter_activations_history.items():
@@ -37,23 +55,53 @@ def run_bright_trial(iam, word):
     
     for i in range(n_cycles):
         if i < n_stim_cycles:
-            iam.present_word(word)
+            if letter_position is None:
+                iam.present_word(word)
+            else:
+                present_letter(iam, word, letter_position)
         else:
-            patterned_mask = np.hstack((np.ones((4, 6)), np.zeros((4, 14 - 6))))
-            iam.feature_layer.activations = patterned_mask
-            iam.absence_detector_layer.activations = 1 - patterned_mask
+            present_mask(iam)
+
         iam.run_cycle()
         take_snapshot()
     
     return letter_activations_history, word_activations_history
 
 
-letter_activations_history, word_activations_history = run_bright_trial(iam, 'READ')
+# ## Word condition 
+
+letter_activations_history, word_activations_history = run_bright_trial(iam, 'READ', letter_position=None)
 
 
 plt.figure(figsize=(10, 6))
 plt.plot(np.array(list(letter_activations_history.values())).T)
 plt.legend(list(letter_activations_history.keys()), loc='upper left')
+plt.grid()
+plt.yticks(np.arange(-0.2, 1.1, 0.1));
+
+
+plt.figure(figsize=(10, 6))
+plt.plot(np.array(list(word_activations_history.values())).T)
+plt.legend(list(word_activations_history.keys()), loc='upper left')
+plt.grid()
+plt.yticks(np.arange(-0.2, 1.1, 0.1));
+
+
+# ## Letter with number signs
+
+letter_activations_history, word_activations_history = run_bright_trial(iam, 'READ', letter_position=1)
+
+
+plt.figure(figsize=(10, 6))
+plt.plot(np.array(list(letter_activations_history.values())).T)
+plt.legend(list(letter_activations_history.keys()), loc='upper left')
+plt.grid()
+plt.yticks(np.arange(-0.2, 1.1, 0.1));
+
+
+plt.figure(figsize=(10, 6))
+plt.plot(np.array(list(word_activations_history.values())).T)
+plt.legend(list(word_activations_history.keys()), loc='upper left')
 plt.grid()
 plt.yticks(np.arange(-0.2, 1.1, 0.1));
 

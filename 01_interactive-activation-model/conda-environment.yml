@@ -16,3 +16,4 @@ dependencies:
   - pip=20.0.2
   - pip:
     - wordkit>=2.0.0
+    - git+https://github.com/clips/metameric.git@4f7c95adf75b0a301dbd0c082969a23f845b1e9d#egg=metameric
